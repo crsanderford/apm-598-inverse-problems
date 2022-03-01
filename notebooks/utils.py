@@ -1,6 +1,8 @@
 import numpy as np 
 import matplotlib.pyplot as plt
+from scipy.optimize import newton
 
+### V V V From Dr. Pasha's lecture notebooks. V V V ###
 
 ## convert a 2-d image into a 1-d vector
 def vec(image):
@@ -82,6 +84,8 @@ def build_A(spread, shape):
     A = 1/normalize * A
     return A
 
+### ^ ^ ^ From Dr. Pasha's lecture notebooks. ^ ^ ^ ###
+
 def arnoldi(A: 'np.ndarray[np.float]', n: int, q_0: 'np.ndarray[np.float]' ) -> 'Tuple[np.ndarray[np.float], np.ndarray[np.float]]':
     """
     computes the rank-n Arnoldi factorization of A, with initial guess q_0.
@@ -120,3 +124,54 @@ def arnoldi(A: 'np.ndarray[np.float]', n: int, q_0: 'np.ndarray[np.float]' ) -> 
 
 
     return (Q,H)
+
+def arnoldi_solver(A, n, b):
+
+    # get arnoldi decomp
+
+    Q, H = arnoldi(A, n, b)
+
+    # least squares with arnoldi
+
+    b_hat = Q.T @ b
+    y = np.linalg.solve( (H.T @ H), H.T @ b_hat)
+    x = Q[:,:-1] @ y
+
+    return x
+
+def arnoldi_tikhonov_solver(A, n, b, reg_param):
+
+    # get arnoldi decomp
+
+    Q, H = arnoldi(A, n, b)
+
+    # tikhonov least squares with arnoldi
+
+    b_hat = Q.T @ b
+
+    y = np.linalg.solve( (H.T @ H + reg_param * np.eye(n)), (H.T @ b_hat) )
+
+    x = Q[:,:-1] @ y
+
+    return x
+
+def tikhonov_solver(A, b, reg_param):
+
+    normal_matrix_dim = A.shape[1]
+
+    x = np.linalg.solve( (A.T @ A + reg_param * np.eye(normal_matrix_dim)), (A.T @ b) )
+
+    return x
+
+def discrepancy_principle(A, b, eta, delta):
+
+    U, S, Vt = np.linalg.svd(A)
+    V = Vt.T
+
+    b_tilde = U.T @ b
+
+    discrepancy_func = lambda reg_param: np.sum(np.array([ (reg_param**2 * b/(s**2 + reg_param**2))**2 for (b,s) in list(zip(b_tilde, S))])) - (eta*delta)**2
+
+    reg_param = newton(discrepancy_func, 1, maxiter=100)
+
+    return reg_param
