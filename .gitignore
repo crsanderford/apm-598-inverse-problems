@@ -135,3 +135,5 @@ dmypy.json
 /figures*
 
 /data*
+
+*/test_GKS_satellite.ipynb

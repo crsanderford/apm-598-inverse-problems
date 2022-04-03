@@ -1,9 +1,8 @@
-from imghdr import what
-from random import betavariate
-from re import X
 import numpy as np 
 import matplotlib.pyplot as plt
 from scipy.optimize import newton
+
+from utils import *
 
 def lanczos_biorthogonalization(A, guess, iter):
 
@@ -112,6 +111,7 @@ def lanczos_biortho_pasha(A, guess, iter):
         U[:, ii+1] = u
 
     return (U, beta, V)
+    
 
 
 def GKS(A, b, L, lanczos_dim, iter, delta, eta):
@@ -124,12 +124,11 @@ def GKS(A, b, L, lanczos_dim, iter, delta, eta):
 
         (Q_L, R_L) = np.linalg.qr(L @ V) # Project L into V, separate into Q and R
 
-        lambdah = 0.00001 # set an arbitrary lambda
+        lambdah = 0.0000 # set an arbitrary lambda
 
         bhat = (Q_A.T @ b).reshape(-1,1) # Project b
 
         R_stacked = np.vstack([R_A, lambdah*R_L]) # Stack projected operators
-
 
         b_stacked = np.vstack([bhat, np.zeros(shape=(R_L.shape[0], 1)) ]) # pad with zeros
 
