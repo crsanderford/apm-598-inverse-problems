@@ -14,15 +14,12 @@ def gsvd(A, B, economy=False):
 
     assert cols_A == cols_B, "the number of columns in A must match the number of columns in B."
 
-    Q,R = la.qr(np.vstack([A, B]))
+    Q,R = la.qr(np.vstack([A, B]), mode='economic')
 
     (U, V, Z, C, S) = csd( Q[:rows_A, :], Q[rows_A:, :] )
 
-    print(Z.shape)
-
     X = R.T @ Z
 
-    print(X.shape)
 
     return (U,V,X,C,S)
 
@@ -62,14 +59,14 @@ def positive_diagonal(Y, X, k):
     """
 
     D = kth_diagonal(X, k)
-    jj = np.logical_and( (D.real > 0), (D.imag != 0) ).flatten()
+    jj = np.logical_or( (D.real < 0), (D.imag != 0) ).flatten()
 
     if True in jj:
 
         D = np.diag( np.conj(D[jj]) / np.abs(D[jj]) )
 
-        Y[:,jj] = Y[:,jj] @ D.T
-        X[jj,:] = D @ X[jj,:]
+        Y[:,jj] = (Y[:,jj] @ D.T).reshape(-1,1)
+        X[jj,:] = (D @ X[jj,:]).reshape(-1,1).T
 
     X = X + 0
 
@@ -139,10 +136,11 @@ def csd(QA, QB):
 
         r = min(rows_QB, cols_QA)
 
-        ii = range(k, rows_QB)
-        jj = range(k, r)
+        ii = np.array(list(range(k, rows_QB)))
+        jj = np.array(list(range(k, r)))
 
-        (UT, ST, VT) = la.svd( S[ii,jj] )
+
+        (UT, ST, VT) = la.svd( S[ii[:,np.newaxis],jj] )
 
         if k > 0:
             S[:k, jj] = 0
@@ -152,10 +150,10 @@ def csd(QA, QB):
         V[:,ii] = V[:,ii] @ UT
         Z[:,jj] = Z[:,jj] @ VT
 
-        ii = range(k,q)
+        ii = np.array(list(range(k,q)))
 
-        (Q,R) = la.qr( C[ii,jj] )
-        C[ii,jj] = zero_offdiagonal(R)
+        (Q,R) = la.qr( C[ii[:,np.newaxis],jj] )
+        C[ii[:,np.newaxis],jj] = zero_offdiagonal(R)
         U[:,ii] = U[:,ii] @ Q
 
     if rows_QA < cols_QA:
@@ -201,22 +199,26 @@ def csd(QA, QB):
         Z = Z[:,jj]
         V = V[:,ii]
 
-        if rows_QB < cols_QA:
-            S[:, rows_QB+1:cols_QA] = 0
+    if rows_QB < cols_QA:
+        S[:, rows_QB+1:cols_QA] = 0
 
-        (U,C) = positive_diagonal(U, C, max(0,cols_QA-rows_QA))
-        C = C.real
+    #print(np.diag(C))
 
-        (V,S) = positive_diagonal(V, S, 0)
-        S = S.real
+    (U,C) = positive_diagonal(U, C, max(0,cols_QA-rows_QA))
+    C = C.real
+
+    #print(np.diag(C))
+
+    (V,S) = positive_diagonal(V, S, 0)
+    S = S.real
 
 
     return (U,V,Z,C,S)
 
 if __name__ == "__main__":
 
-    A = np.random.rand(10,10)
-    B = np.random.rand(10,10)
+    A = np.arange(0,100,1).reshape(10,10)
+    B = np.arange(0,80,1).reshape(8,10)
 
     (U,V,X,C,S) = gsvd(A,B)
 
