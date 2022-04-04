@@ -137,3 +137,5 @@ dmypy.json
 /data*
 
 */test_GKS_satellite.ipynb
+
+*/gsvd_old.py
