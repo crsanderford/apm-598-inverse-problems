@@ -139,3 +139,5 @@ dmypy.json
 */test_GKS_satellite.ipynb
 
 */gsvd_old.py
+
+results/saved_models/
